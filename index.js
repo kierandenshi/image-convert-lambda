@@ -1,11 +1,14 @@
 const express = require('express');
 const multer = require('multer');
 const serverless = require('serverless-http');
+const cors = require('cors');
 const aws = require('aws-sdk');
 const gm = require('gm').subClass({ imageMagick: true });
 const s3 = new aws.S3();
 const app = express();
-const upload = multer();
+const upload = multer({
+    limits: { fieldSize: 25 * 1024 * 1024 },
+});
 
 const convertToJpeg = (base64buffer) => new Promise((resolve, reject) => {
     gm(base64buffer).antialias(true).density(300).toBuffer('JPG', (err, buffer) => (
@@ -36,6 +39,8 @@ const processImage = ({ content, filename }) => new Promise((resolve, reject) =>
         .catch(err => reject(err));
 });
 
+app.use(cors());
+
 app.get('/', (req, res) => {
     res.send('hello');
 });
@@ -44,8 +49,8 @@ app.post('/upload', upload.array(), (req, res) => {
     const data = JSON.parse(req.body.data);
     const actions = data.map(processImage);
     Promise.all(actions)
-        .then(result => res.send(result))
-        .catch(err => res.send(err));
+        .then(result => res.json({ data: result }))
+        .catch(err => res.json({ error: err }));
 });
 
 module.exports.handler = serverless(app);
