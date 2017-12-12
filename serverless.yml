@@ -1,4 +1,4 @@
-service: service-test
+service: conver-image
 
 provider:
   name: aws
@@ -15,4 +15,5 @@ functions:
     handler: index.handler
     events:
       - http: GET /
+      - http: OPTIONS /upload
       - http: POST /upload
