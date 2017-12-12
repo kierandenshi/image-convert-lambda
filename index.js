@@ -24,18 +24,17 @@ const uploadToS3Bucket = ({ buffer, filename }) => new Promise((resolve, reject)
         ACL: 'public-read',
         ContentType: 'JPG',
     };
-
     s3.upload(params, (err, data) => (
         err ? reject(err) : resolve(data)
     ));
 });
 
-const processImage = ({ content, filename }) => new Promise((resolve, reject) => {
+const processImage = ({ content, filename, imageName = '' }) => new Promise((resolve, reject) => {
     const base64Data = content.replace(/^data:\w*\/\w*;base64,/gm, '');
     const base64buffer = new Buffer(base64Data, 'base64');
     convertToJpeg(base64buffer)
         .then(jpegBuffer => uploadToS3Bucket({ buffer: jpegBuffer, filename }))
-        .then(data => resolve(data))
+        .then(data => resolve(Object.assign({}, data, { imageName })))
         .catch(err => reject(err));
 });
 
